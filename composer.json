@@ -1,0 +1,22 @@
+{
+    "name": "dzasa/OpenExchangeRates",
+    "description": "A PHP wrapper for Openexchangerates.org API with extended functionalities.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [ "php", "exchange", "rates", "api", "cache" ],
+    "autoload": {
+        "psr-4": { "OpenExchangeRates\\": "src" }
+    },
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "suggest": {
+        "ext-apc": "Allows for faster performance of Core Framework through APC caching"
+    },
+    "authors": [
+        {
+            "name": "Jasenko Rakovic",
+            "email": "naucnik@gmail.com"
+        }
+    ]
+}
