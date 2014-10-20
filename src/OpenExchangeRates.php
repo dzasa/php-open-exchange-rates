@@ -126,7 +126,7 @@ class OpenExchangeRates {
             $this->cacheHandler = $cacheHandler;
         }
 
-        $paidCheckResult = $this->getLatestRates($this->config['base']);
+        $paidCheckResult = $this->getLatestRates($this->config['base'], true, true);
 
         if (isset($paidCheckResult['error']) && $paidCheckResult['message'] == 'not_allowed') {
             $this->getLatestRates();
@@ -147,12 +147,12 @@ class OpenExchangeRates {
      * @param bool $resetBase
      * @return array
      */
-    public function getLatestRates($base = false, $resetBase = true) {
+    public function getLatestRates($base = false, $resetBase = true, $skipCache = false) {
 
 
-        if ($this->cacheHandler != null) {
+        if ($this->cacheHandler != null && !$skipCache) {
             $key = md5(date("Y-m-d"));
-            $cacheKey = sprintf("OER_latest__%s%s", $base ? $base : $this->getBaseCurrency(), isset($this->symbols) ? $this->symbols : '');
+            $cacheKey = sprintf("OER_latest__%s%s", $this->config['base'], isset($this->symbols) ? $this->symbols : '');
             $cacheKey = "OER_latest__" . md5($cacheKey);
 
             $cache = $this->cacheHandler->get($cacheKey);
@@ -169,7 +169,7 @@ class OpenExchangeRates {
         if (isset($this->symbols) && $this->isPaid) {
             $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
         }
-
+        
         $result = $this->sendRequest();
 
         $this->latestRates = $result;
@@ -183,7 +183,7 @@ class OpenExchangeRates {
         }
 
 
-        if ($this->cacheHandler != null && !isset($this->latestRates['error'])) {
+        if ($this->cacheHandler != null && !isset($this->latestRates['error']) && !$skipCache) {
             $this->cacheHandler->set($cacheKey, $this->latestRates);
         }
 
