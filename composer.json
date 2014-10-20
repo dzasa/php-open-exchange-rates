@@ -9,12 +9,13 @@
         "psr-4": { "Dzasa\\OpenExchangeRates\\": "src" }
     },
     "require": {
-        "php": ">=5.4.0"
+        "php": ">=5.3.0"
     },
     "suggest": {
         "ext-apc": "Enable APC caching",
-        "ext-curl": "Use CURL when calling OPenExchangeRates.org API",
-        "ext-memcache" : "Use Memcache when calling OPenExchangeRates.org API"
+        "ext-json": "Parse json returned from OpenExchangeRates.org API",
+        "ext-curl": "Use CURL when calling OpenExchangeRates.org API",
+        "ext-memcache" : "Use Memcache when calling OpenExchangeRates.org API"
     },
     "authors": [
         {
