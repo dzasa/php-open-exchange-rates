@@ -1,5 +1,5 @@
 <?php
-namespace OpenExchangeRates;
+namespace Dzasa\OpenExchangeRates;
 
 use Exception;
 use Memcache;

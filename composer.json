@@ -6,7 +6,7 @@
     "keywords": [ "php", "exchange", "rates", "api", "cache" ],
     "homepage": "http://github.com/dzasa/php-open-exchange-rates",
     "autoload": {
-        "psr-4": { "OpenExchangeRates\\": "src" }
+        "psr-4": { "Dzasa\\OpenExchangeRates\\": "src" }
     },
     "require": {
         "php": ">=5.4.0"

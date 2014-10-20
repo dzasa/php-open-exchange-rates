@@ -1,8 +1,8 @@
 <?php
 
-namespace OpenExchangeRates;
+namespace Dzasa\OpenExchangeRates;
 
-use OpenExchangeRates\Cache;
+use Dzasa\OpenExchangeRates\Cache;
 use Exception;
 
 /**
