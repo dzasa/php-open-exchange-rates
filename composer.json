@@ -1,9 +1,10 @@
 {
-    "name": "dzasa/OpenExchangeRates",
+    "name": "dzasa/open-exchange-rates",
     "description": "A PHP wrapper for Openexchangerates.org API with extended functionalities.",
     "type": "library",
     "license": "MIT",
     "keywords": [ "php", "exchange", "rates", "api", "cache" ],
+    "homepage": "http://github.com/dzasa/php-open-exchange-rates",
     "autoload": {
         "psr-4": { "OpenExchangeRates\\": "src" }
     },
@@ -11,7 +12,9 @@
         "php": ">=5.4.0"
     },
     "suggest": {
-        "ext-apc": "Allows for faster performance of Core Framework through APC caching"
+        "ext-apc": "Enable APC caching",
+        "ext-curl": "Use CURL when calling OPenExchangeRates.org API",
+        "ext-memcache" : "Use Memcache when calling OPenExchangeRates.org API"
     },
     "authors": [
         {
