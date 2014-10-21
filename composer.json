@@ -20,7 +20,8 @@
     "authors": [
         {
             "name": "Jasenko Rakovic",
-            "email": "naucnik@gmail.com"
+            "email": "naucnik@gmail.com",
+            "role": "Developer"
         }
     ]
 }
