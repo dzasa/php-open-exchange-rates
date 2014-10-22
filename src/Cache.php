@@ -39,7 +39,7 @@ class Cache {
                     throw $e;
                 }
             } else {
-                throw new Exception("You don't have Memecache installed!");
+                throw new Exception("You don't have Memecache support installed!");
             }
         } else if ($handler === 'apc') {
             if (!extension_loaded('apc')) {

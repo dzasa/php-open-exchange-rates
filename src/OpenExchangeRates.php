@@ -137,7 +137,7 @@ class OpenExchangeRates {
 
 
         $this->disclaimer = isset($this->latestRates['disclaimer']) ? $this->latestRates['disclaimer'] : '';
-        $this->licence = isset($this->latestRates['licence']) ? $this->latestRates['licence'] : '';
+        $this->license = isset($this->latestRates['license']) ? $this->latestRates['license'] : '';
     }
 
     /**
@@ -152,7 +152,7 @@ class OpenExchangeRates {
 
         if ($this->cacheHandler != null && !$skipCache) {
             $key = md5(date("Y-m-d"));
-            $cacheKey = sprintf("OER_latest__%s%s", $this->config['base'], isset($this->symbols) ? $this->symbols : '');
+            $cacheKey = sprintf("%s%s", $this->config['base'], isset($this->symbols) ? $this->symbols : '');
             $cacheKey = "OER_latest__" . md5($cacheKey);
 
             $cache = $this->cacheHandler->get($cacheKey);
@@ -196,10 +196,25 @@ class OpenExchangeRates {
      * @param date $date
      * @return array
      */
-    public function getHistorical($date) {
+    public function getHistorical($date, $skipCache = false) {
+        
+        if ($this->cacheHandler != null && !$skipCache) {
+            $key = md5(date("Y-m-d"));
+            $cacheKey = sprintf("%s%s%s", $this->config['base'], isset($this->symbols) ? $this->symbols : '', $date);
+            $cacheKey = "OER_historical__" . md5($cacheKey);
+
+            $cache = $this->cacheHandler->get($cacheKey);
+
+            if ($cache) {
+                $this->latestRates = $cache;
+
+                return $this->latestRates;
+            }
+        }
+        
         $this->config['route'] = sprintf(self::ROUTE_HISTORICAL . "?app_id=%s&base=%s", $this->config['protocol'], $date, $this->config['api_key'], $this->getBaseCurrency());
 
-        if (isset($this->symbols)) {
+        if (isset($this->symbols) && $this->isPaid) {
             $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
         }
 
@@ -209,6 +224,10 @@ class OpenExchangeRates {
 
         if (!$this->isPaid && self::DEFAULT_BASE != $this->config['base']) {
             $this->setBaseCurrency($this->config['base'], $this->historicalRates);
+        }
+        
+        if (isset($this->symbols) && !$this->isPaid) {
+            $this->reduceSymbols($this->historicalRates['rates']);
         }
 
         return $this->historicalRates;
@@ -279,7 +298,9 @@ class OpenExchangeRates {
 
         return array(
             'from' => $from,
+            'from_rate' => $fromRate,
             'to' => $to,
+            'toRate' => $toRate,
             'amount' => $amount,
             'result' => $finalResult
         );
@@ -294,6 +315,8 @@ class OpenExchangeRates {
      * @param bool $range
      */
     public function setBaseCurrency($base, &$source = array(), $range = false) {
+        $this->config['base'] = strtoupper($base);
+        
         if (!$this->isPaid) {
             $this->config['base'] = strtoupper($base);
 
@@ -352,6 +375,24 @@ class OpenExchangeRates {
         } else {
             return self::DEFAULT_BASE;
         }
+    }
+    
+    /**
+     * Return Disclaimer
+     * 
+     * @return string
+     */
+    public function getDisclaimer(){
+        return $this->disclaimer;
+    }
+    
+    /**
+     * Return License
+     * 
+     * @return string
+     */
+    public function getLicense(){
+        return $this->license;
     }
 
     /**
