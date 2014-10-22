@@ -31,11 +31,17 @@ $config = array(
 );
 
 // using File cache
-$exchangeRates = new OpenExchangeRates($config, new Cache("file", array('cache_dir'=>'/path_to_cache_dir/')));
+$cache = new Cache("file", array('cache_dir'=>'/path_to_cache_dir/'));
+$exchangeRates = new OpenExchangeRates($config, $cache);
+
 // or using APC
-$exchangeRates = new OpenExchangeRates($config, new Cache("apc"));
+$cache = new Cache("apc");
+$exchangeRates = new OpenExchangeRates($config, $cache);
+
 // or using Memcache
-$exchangeRates = new OpenExchangeRates($config, new Cache("memcache", array('host'=>'localhost', 'port'=> 11211)));
+$cache = new Cache("memcache", array('host'=>'localhost', 'port'=> 11211));
+$exchangeRates = new OpenExchangeRates($config, $cache);
+
 // or not using cache
 $exchangeRates = new OpenExchangeRates($config);
 
