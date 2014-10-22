@@ -18,8 +18,6 @@ Features
 Usage
 -----
 
-Install the latest version with `composer require dzasa/open-exchange-rates`
-
 ```php
 <?php
 
