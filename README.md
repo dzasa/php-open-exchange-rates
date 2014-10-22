@@ -18,7 +18,7 @@ Features
 Usage
 -----
 
-Install the latest version with `composer require monolog/monolog`
+Install the latest version with `composer require dzasa/open-exchange-rates`
 
 ```php
 <?php
@@ -78,6 +78,12 @@ $disclaimer = $exchangeRates->getDisclaimer();
 About
 =====
 
+Requirements
+------------
+
+- Works with PHP 5.3 or above.
+
+
 Submitting bugs and feature requests
 ------------------------------------
 Bugs and feature request are tracked on [GitHub]
@@ -85,7 +91,7 @@ Bugs and feature request are tracked on [GitHub]
 Version
 ----
 
-0.5
+0.6
 
 
 Author
