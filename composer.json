@@ -18,9 +18,9 @@
     },
     "suggest": {
         "ext-apc": "Enable APC caching",
-        "ext-json": "Parse json returned from OpenExchangeRates.org API",
-        "ext-curl": "Use CURL when calling OpenExchangeRates.org API",
-        "ext-memcache": "Use Memcache when calling OpenExchangeRates.org API"
+        "ext-json": "Parse json returned from OpenExchangeRates.org API.",
+        "ext-curl": "Use CURL when calling OpenExchangeRates.org API.",
+        "ext-memcache": "Use Memcache when calling OpenExchangeRates.org API."
     },
     "authors": [
         {
