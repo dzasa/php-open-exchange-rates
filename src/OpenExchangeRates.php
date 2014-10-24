@@ -4,6 +4,9 @@ namespace Dzasa\OpenExchangeRates;
 
 use Dzasa\OpenExchangeRates\Cache;
 use Exception;
+use DateTime;
+use DateInterval;
+use DatePeriod;
 
 /**
  * OpenExchangeRates
@@ -18,27 +21,27 @@ class OpenExchangeRates {
      * @var string Default protocol to use. HTTPS is optional
      */
     const DEFAULT_PROTOCOL = 'http';
-    
+
     /**
      * @var string Default transfer client. 
      */
     const DEFAULT_CLIENT = 'curl';
-    
+
     /**
      * @var string Route for latest exchange rates
      */
     const ROUTE_LATEST = "%s://openexchangerates.org/api/latest.json";
-    
+
     /**
      * @var string Route for all currencies
      */
     const ROUTE_CURRENCIES = "%s://openexchangerates.org/api/currencies.json";
-    
+
     /**
      * @var string Route for historical exchange rates
      */
     const ROUTE_HISTORICAL = "%s://openexchangerates.org/api/historical/%s.json";
-    
+
     /**
      * @var string Default exchange rates base currency
      */
@@ -57,51 +60,51 @@ class OpenExchangeRates {
         'client' => self::DEFAULT_CLIENT,
         'base' => self::DEFAULT_BASE
     );
-    
+
     /**
      * @var Cache Caching handler. Can be Memcache, APC or File 
      */
     private $cacheHandler;
-    
+
     /**
-     * @var boolean To determine of user is in Paid or free plan. If its in free plan, use extra logic to have same functionalities as paid user.
+     * @var boolean To determine of user is in Paid with advanced options or not. If its in non advanced options plan, use extra logic to have same functionalities as advanced options user.
      */
-    private $isPaid = false;
-    
+    private $isAdvanced = false;
+
     /**
      * @var string Reduce returned currencies to these
      */
     private $symbols;
-    
+
     /**
      *
      * @var string Disclaimer from API
      */
     private $disclaimer;
-    
+
     /**
      * @var string License from API
      */
     private $license;
-    
+
     /**
      *
      * @var array Latest rates 
      */
     private $latestRates = array();
-    
+
     /**
      *
      * @var array Historical rates
      */
     private $historicalRates = array();
-    
+
     /**
      *
      * @var array Time series rates 
      */
     private $timeSeries = array();
-    
+
     /**
      *
      * @var array All currencies used by API
@@ -128,10 +131,12 @@ class OpenExchangeRates {
 
         $paidCheckResult = $this->getLatestRates($this->config['base'], true, true);
 
-        if (isset($paidCheckResult['error']) && $paidCheckResult['message'] == 'not_allowed') {
+        if (isset($paidCheckResult['error']) && $paidCheckResult['message'] == 'invalid_app_id') {
+            throw new \Exception($paidCheckResult['description']);
+        } else if (isset($paidCheckResult['error']) && $paidCheckResult['message'] == 'not_allowed') {
             $this->getLatestRates();
         } else if (self::DEFAULT_BASE != $this->config['base']) {
-            $this->isPaid = true;
+            $this->isAdvanced = true;
         }
 
 
@@ -141,7 +146,7 @@ class OpenExchangeRates {
     }
 
     /**
-     * Get latest exchange rates from API and change currency if user is not in paid plan
+     * Get latest exchange rates from API and change currency if user is not in paid advanced options plan
      * 
      * @param string $base
      * @param bool $resetBase
@@ -164,21 +169,21 @@ class OpenExchangeRates {
             }
         }
 
-        $this->config['route'] = sprintf(self::ROUTE_LATEST . "?app_id=%s&base=%s", $this->config['protocol'], $this->config['api_key'], $base ? $base : $this->getBaseCurrency());
+        $this->config['route'] = sprintf(self::ROUTE_LATEST . "?app_id=%s&base=%s", $this->config['protocol'], $this->config['api_key'], $base ? $base : $this->getBaseCurrency(true));
 
-        if (isset($this->symbols) && $this->isPaid) {
+        if (isset($this->symbols) && $this->isAdvanced) {
             $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
         }
-        
+
         $result = $this->sendRequest();
 
         $this->latestRates = $result;
 
-        if (!$this->isPaid && self::DEFAULT_BASE != $this->config['base'] && $resetBase) {
+        if (!$this->isAdvanced && self::DEFAULT_BASE != $this->config['base'] && $resetBase) {
             $this->setBaseCurrency($this->config['base'], $this->latestRates);
         }
 
-        if (isset($this->symbols) && !$this->isPaid) {
+        if (isset($this->symbols) && !$this->isAdvanced) {
             $this->reduceSymbols($this->latestRates['rates']);
         }
 
@@ -191,30 +196,37 @@ class OpenExchangeRates {
     }
 
     /**
-     * Get historical exchange rates and change currency if user is not in paid plan
+     * Get historical exchange rates and change currency if user is not in paid advanced options plan
      * 
      * @param date $date
      * @return array
      */
     public function getHistorical($date, $skipCache = false) {
-        
+
+        $time = strtotime($date);
+
+        if (!$time) {
+            throw new \Exception("Not valid input for date, check http://php.net/manual/en/function.strtotime.php");
+        }
+
+        $date = date("Y-m-d", $time);
+
         if ($this->cacheHandler != null && !$skipCache) {
-            $key = md5(date("Y-m-d"));
             $cacheKey = sprintf("%s%s%s", $this->config['base'], isset($this->symbols) ? $this->symbols : '', $date);
             $cacheKey = "OER_historical__" . md5($cacheKey);
 
             $cache = $this->cacheHandler->get($cacheKey);
 
             if ($cache) {
-                $this->latestRates = $cache;
+                $this->historicalRates = $cache;
 
-                return $this->latestRates;
+                return $this->historicalRates;
             }
         }
-        
-        $this->config['route'] = sprintf(self::ROUTE_HISTORICAL . "?app_id=%s&base=%s", $this->config['protocol'], $date, $this->config['api_key'], $this->getBaseCurrency());
 
-        if (isset($this->symbols) && $this->isPaid) {
+        $this->config['route'] = sprintf(self::ROUTE_HISTORICAL . "?app_id=%s&base=%s", $this->config['protocol'], $date, $this->config['api_key'], $this->getBaseCurrency(true));
+
+        if (isset($this->symbols) && $this->isAdvanced) {
             $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
         }
 
@@ -222,19 +234,109 @@ class OpenExchangeRates {
 
         $this->historicalRates = $result;
 
-        if (!$this->isPaid && self::DEFAULT_BASE != $this->config['base']) {
+        if (!$this->isAdvanced && self::DEFAULT_BASE != $this->config['base']) {
             $this->setBaseCurrency($this->config['base'], $this->historicalRates);
         }
-        
-        if (isset($this->symbols) && !$this->isPaid) {
+
+        if (isset($this->symbols) && !$this->isAdvanced) {
             $this->reduceSymbols($this->historicalRates['rates']);
+        }
+
+        if ($this->cacheHandler != null && !isset($this->historicalRates['error']) && !$skipCache) {
+            $this->cacheHandler->set($cacheKey, $this->historicalRates);
         }
 
         return $this->historicalRates;
     }
 
-    public function getTimeSeries($startDate, $endDate) {
-        
+    /**
+     * Get exchnage rates for date range. 
+     * Please note that each day requested counts as one API request (so requesting a full month of data will count as up to 31 'hits').
+     * 
+     * @param DateTime $startDate
+     * @param DateTime $endDate
+     * @param bool $skipCache
+     * @return array
+     * @throws \Exception
+     */
+    public function getTimeSeries($startDate, $endDate, $skipCache = false) {
+        $startTime = strtotime($startDate);
+        $endTime = strtotime($endDate);
+
+        if (!$startTime || !$endTime) {
+            throw new \Exception("Not valid input for start or end date, check http://php.net/manual/en/function.strtotime.php");
+        }
+
+
+        if ($this->cacheHandler != null && !$skipCache) {
+            $cacheKey = sprintf("%s%s%s%s", $this->config['base'], isset($this->symbols) ? $this->symbols : '', $startTime, $endTime);
+            $cacheKey = "OER_timeseries__" . md5($cacheKey);
+
+            $cache = $this->cacheHandler->get($cacheKey);
+
+            if ($cache) {
+                $this->timeSeries = $cache;
+
+                return $this->timeSeries;
+            }
+        }
+        $startDate = new DateTime(date("Y-m-d", $startTime));
+        $endDate = new DateTime(date("Y-m-d", $endTime));
+
+        $interval = new DateInterval('P1D');
+        $daterange = new DatePeriod($startDate, $interval, $endDate);
+
+        $this->timeSeries = array(
+            'disclaimer' => $this->getDisclaimer(),
+            'license' => $this->getLicense(),
+            'base' => $this->getBaseCurrency(),
+            'rates' => array()
+        );
+
+        if ($this->isAdvanced) {
+            $this->config['route'] = sprintf(self::ROUTE_HISTORICAL . "?app_id=%s&base=%s", $this->config['protocol'], $date->format("Y-m-d"), $this->config['api_key'], $this->getBaseCurrency(true));
+            $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
+
+            $result = $this->sendRequest();
+
+            if ($this->cacheHandler != null && !isset($this->historicalRates['error']) && !$skipCache) {
+                $this->cacheHandler->set($cacheKey, $this->timeSeries);
+            }
+
+            return $this->timeSeries;
+        }
+
+        foreach ($daterange as $date) {
+            $this->config['route'] = sprintf(self::ROUTE_HISTORICAL . "?app_id=%s&base=%s", $this->config['protocol'], $date->format("Y-m-d"), $this->config['api_key'], $this->getBaseCurrency(true));
+
+            if (isset($this->symbols) && $this->isAdvanced) {
+                $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
+            }
+
+            $result = $this->sendRequest();
+
+            if (!isset($result['error'])) {
+                $this->timeSeries['rates'][$date->format("Y-m-d")] = $result['rates'];
+            }
+
+            if (!$this->isAdvanced && self::DEFAULT_BASE != $this->config['base']) {
+                $this->setBaseCurrency($this->config['base'], $this->timeSeries['rates'][$date->format("Y-m-d")]);
+            }
+
+            if (isset($this->symbols) && !$this->isAdvanced) {
+                $this->reduceSymbols($this->timeSeries['rates'][$date->format("Y-m-d")]);
+            }
+
+            //be nice to API :)
+            usleep(200000);
+        }
+
+
+        if ($this->cacheHandler != null && !isset($this->historicalRates['error']) && !$skipCache) {
+            $this->cacheHandler->set($cacheKey, $this->timeSeries);
+        }
+
+        return $this->timeSeries;
     }
 
     /**
@@ -243,7 +345,7 @@ class OpenExchangeRates {
      * @return type
      */
     public function getAllCurrencies() {
-        $this->config['route'] = sprintf(self::ROUTE_CURRENCIES . "?app_id=%s&base=%s", $this->config['protocol'], $this->config['api_key'], $this->getBaseCurrency());
+        $this->config['route'] = sprintf(self::ROUTE_CURRENCIES . "?app_id=%s&base=%s", $this->config['protocol'], $this->config['api_key'], $this->getBaseCurrency(true));
 
         if (isset($this->symbols)) {
             $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
@@ -307,7 +409,7 @@ class OpenExchangeRates {
     }
 
     /**
-     * Change base currency if user is not in paid plan.
+     * Change base currency if user is not in paid advanced options plan.
      * 
      * 
      * @param string $base
@@ -316,9 +418,8 @@ class OpenExchangeRates {
      */
     public function setBaseCurrency($base, &$source = array(), $range = false) {
         $this->config['base'] = strtoupper($base);
-        
-        if (!$this->isPaid) {
-            $this->config['base'] = strtoupper($base);
+
+        if (!$this->isAdvanced) {
 
             if (is_array($source) && isset($source['rates'])) {
                 $fromRate = $source['rates'][$base];
@@ -329,9 +430,16 @@ class OpenExchangeRates {
                     } else {
                         $rate = 1;
                     }
+                    $source['base'] = $this->config['base'];
+                }
+            } else if (is_array($source) && !isset($source['rates']) && !isset($source['error'])) {
+                $fromRate = $source[$base];
 
-                    if (!$range) {
-                        $source['base'] = $this->config['base'];
+                foreach ($source as $key => &$rate) {
+                    if ($base != $key) {
+                        $rate = $this->convert($base, $key, 1, false, $fromRate, $rate);
+                    } else {
+                        $rate = 1;
                     }
                 }
             }
@@ -357,7 +465,7 @@ class OpenExchangeRates {
             $symbols = explode(",", $this->symbols);
 
             foreach ($source as $key => $rate) {
-                if(!in_array($key, $symbols)){
+                if (!in_array($key, $symbols)) {
                     unset($source[$key]);
                 }
             }
@@ -365,33 +473,33 @@ class OpenExchangeRates {
     }
 
     /**
-     * Return base currency
+     * Return base currency. Can return real base used with API or our base currency
      * 
      * @return string
      */
-    public function getBaseCurrency() {
-        if ($this->isPaid) {
+    public function getBaseCurrency($real = false) {
+        if ($this->isAdvanced || !$real) {
             return $this->config['base'];
         } else {
             return self::DEFAULT_BASE;
         }
     }
-    
+
     /**
      * Return Disclaimer
      * 
      * @return string
      */
-    public function getDisclaimer(){
+    public function getDisclaimer() {
         return $this->disclaimer;
     }
-    
+
     /**
      * Return License
      * 
      * @return string
      */
-    public function getLicense(){
+    public function getLicense() {
         return $this->license;
     }
 

@@ -1,7 +1,7 @@
 Open Exchange Rates PHP Wrapper
 ===================
 
-A PHP wrapper for Openexchangerates.org API with extended features for free plan.
+A PHP wrapper for Openexchangerates.org API with extended features for non advanced options plan.
 
 Features
 -------------------
@@ -9,6 +9,7 @@ Features
 * Return all available currencies
 * Return latest exchange rates using default base currency USD or custom currency
 * Return historical exchange rates using default base currency USD or custom currency
+* Return dates range exchange rates using default base currency USD or custom currency
 * Change base currency
 * Convert between currencies
 * Cache exchange rates using Memcache, APC or File cache
@@ -20,6 +21,9 @@ Usage
 
 ```php
 <?php
+
+use Dzasa\OpenExchangeRates\OpenExchangeRates;
+use Dzasa\OpenExchangeRates\Cache;
 
 $config = array(
     'api_key' => 'your_api_key', // required
@@ -55,10 +59,13 @@ $exchangeRates->setSymbols("BAM,EUR,USD");
 // get latest currencies
 $latestRates = $exchangeRates->getLatestRates();
 
-// get exchange rates for 01.01.2014
+// get exchange rates for 01.01.2014, input can be any valid strtotime input for past
 $historicalRates = $exchangeRates->getHistorical("2014-01-01");
 
-// convert from EUR to BAM on 3 decimals
+// get exchange rates for date range, input can be any valid strtotime() input
+$timeSeries = $exchangeRates->getTimeSeries("last Friday", "today");
+
+// convert from EUR to BAM with 3 decimals
 $convert = $exchangeRates->convert("EUR", "BAM", 10, 3);
 
 // get base currency
@@ -89,7 +96,7 @@ Bugs and feature request are tracked on [GitHub]
 Version
 ----
 
-0.6
+0.7
 
 
 Author
