@@ -138,6 +138,9 @@ class OpenExchangeRates {
         } else if (self::DEFAULT_BASE != $this->config['base']) {
             $this->isAdvanced = true;
         }
+        
+        // set currencies
+        $this->getAllCurrencies();
 
 
 
@@ -342,18 +345,34 @@ class OpenExchangeRates {
     /**
      * Get all currencies available in API
      * 
+     * @param bool $skipCache
      * @return type
      */
-    public function getAllCurrencies() {
-        $this->config['route'] = sprintf(self::ROUTE_CURRENCIES . "?app_id=%s&base=%s", $this->config['protocol'], $this->config['api_key'], $this->getBaseCurrency(true));
+    public function getAllCurrencies($skipCache = false) {
+        
+        if ($this->cacheHandler != null && !$skipCache) {
+            $cacheKey = "OER_currencies";
 
-        if (isset($this->symbols)) {
-            $this->config['route'] .= sprintf($this->config['route'] . "&symbols=%s", $this->symbols);
+            $cache = $this->cacheHandler->get($cacheKey);
+
+            if ($cache) {
+                $this->currencies = $cache;
+
+                return $this->currencies;
+            }
+        } else if(!isset($this->currencies['error']) && is_array($this->currencies)){
+            return $this->currencies;
         }
+        
+        $this->config['route'] = sprintf(self::ROUTE_CURRENCIES . "?app_id=%s", $this->config['protocol'], $this->config['api_key']);
 
         $result = $this->sendRequest();
 
         $this->currencies = $result;
+        
+        if ($this->cacheHandler != null && !isset($this->currencies['error']) && !$skipCache) {
+            $this->cacheHandler->set($cacheKey, $this->currencies);
+        }
 
         return $result;
     }
@@ -406,6 +425,22 @@ class OpenExchangeRates {
             'amount' => $amount,
             'result' => $finalResult
         );
+    }
+
+    /**
+     * 
+     * @param string $currency
+     * @param integer $decimals
+     * @return float
+     */
+    public function getRate($currency, $decimals = 3) {
+        if (empty($this->latestRates)) {
+            $this->getLatestRates();
+        }
+        
+        $finalResult = number_format($this->latestRates['rates'][strtoupper($currency)], $decimals);
+        
+        return $finalResult;
     }
 
     /**

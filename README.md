@@ -10,6 +10,7 @@ Features
 * Return latest exchange rates using default base currency USD or custom currency
 * Return historical exchange rates using default base currency USD or custom currency
 * Return dates range exchange rates using default base currency USD or custom currency
+* return single rate
 * Change base currency
 * Convert between currencies
 * Cache exchange rates using Memcache, APC or File cache
@@ -68,6 +69,9 @@ $timeSeries = $exchangeRates->getTimeSeries("last Friday", "today");
 // convert from EUR to BAM with 3 decimals
 $convert = $exchangeRates->convert("EUR", "BAM", 10, 3);
 
+// get rate for EUR currency
+$singleRate = $exchangeRates->getRate("EUR");
+
 // get base currency
 $baseCurrency = $exchangeRates->getBaseCurrency();
 
@@ -96,7 +100,7 @@ Bugs and feature request are tracked on [GitHub]
 Version
 ----
 
-0.7
+0.7.2
 
 
 Author
